@@ -159,7 +159,10 @@ def gmute(bot: Bot, update: Update, args: List[str]):
             continue
 
         try:
-            bot.restrict_chat_member(chat_id, user_id, can_send_messages=False)
+            member = bot.get_chat_member(chat_id, user_id)
+            if(member.status!='creator' and member.status!='administrator' and member.status!='kicked' and member.status!='left' and member.status == 'member'):
+                bot.restrict_chat_member(chat_id, user_id, can_send_messages=False)
+
         except BadRequest as excp:
             if excp.message in GMUTE_ERRORS:
                 pass
@@ -220,7 +223,7 @@ def ungmute(bot: Bot, update: Update, args: List[str]):
 
         try:
             member = bot.get_chat_member(chat_id, user_id)
-            if member.status == 'restricted':
+            if (member.status == 'restricted' and member.status != 'kicked' and member.status != 'left' and member.status == 'member'):
                 bot.restrict_chat_member(chat_id, int(user_id),
                                      can_send_messages=True,
                                      can_send_media_messages=True,
