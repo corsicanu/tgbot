@@ -1,6 +1,8 @@
 import html, time
 import re
+import time
 from typing import Optional, List
+
 
 from telegram import Message, Chat, Update, Bot, User, CallbackQuery
 from telegram import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
@@ -9,6 +11,7 @@ from telegram.ext import MessageHandler, Filters, CommandHandler, run_async, Cal
 from telegram.utils.helpers import mention_markdown, mention_html, escape_markdown
 
 import tg_bot.modules.sql.welcome_sql as sql
+import tg_bot.modules.sql.global_mutes_sql as sqlb
 from tg_bot import dispatcher, OWNER_ID, LOGGER, SUDO_USERS, SUPPORT_USERS
 from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
@@ -105,6 +108,10 @@ def new_member(bot: Bot, update: Update):
                 " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, bot.first_name, chat_name))
 
             else:
+                if sqlb.is_user_gmuted(new_mem.id):
+                    bot.restrict_chat_member(update.effective_chat.id, new_mem.id, can_send_messages=False)
+                    update.effective_message.reply_text("This user was globally muted by my owner or one of my sudo/support users so it shouldn't speak!")
+
                 # If welcome message is media, send with appropriate function
                 if welc_type != sql.Types.TEXT and welc_type != sql.Types.BUTTON_TEXT:
                     ENUM_FUNC_MAP[welc_type](chat.id, cust_welcome)
@@ -147,6 +154,8 @@ def new_member(bot: Bot, update: Update):
 
                 #Safe mode
                 if welc_mutes == "on":
+                    start_time = time.time()
+                    trigger_time = start_time + 60
                     msg.reply_text("Click the button below to prove you're human",
                          reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Yes, I'm a human", 
                          callback_data="userverify_({})".format(new_mem.id))]]))
@@ -155,6 +164,9 @@ def new_member(bot: Bot, update: Update):
                                              can_send_media_messages=False, 
                                              can_send_other_messages=False, 
                                              can_add_web_page_previews=False)
+                    if time.time() == trigger_time:
+                         chat.unban_member(new_mem.id)
+                         
             delete_join(bot, update)
 
         prev_welc = sql.get_clean_pref(chat.id)
