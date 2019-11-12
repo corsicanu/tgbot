@@ -28,12 +28,12 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
 
     user_id = extract_user(message, args)
     if not user_id or int(user_id) == 777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return ""
 
     user_member = chat.get_member(user_id)
     if user_member.status == 'administrator' or user_member.status == 'creator':
-        message.reply_text("How am I meant to promote someone that's already an admin?")
+        message.reply_text("For real? Dude, he's already an admin!")
         return ""
 
     if user_id == bot.id:
@@ -53,7 +53,7 @@ def promote(bot: Bot, update: Update, args: List[str]) -> str:
                           can_pin_messages=bot_member.can_pin_messages,
                           can_promote_members=bot_member.can_promote_members)
 
-    message.reply_text("Successfully promoted!")
+    message.reply_text("This dude is now an admin!")
     return "<b>{}:</b>" \
            "\n#PROMOTED" \
            "\n<b>Admin:</b> {}" \
@@ -74,12 +74,12 @@ def demote(bot: Bot, update: Update, args: List[str]) -> str:
 
     user_id = extract_user(message, args)
     if not user_id or int(user_id) == 777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return ""
 
     user_member = chat.get_member(user_id)
     if user_member.status == 'creator':
-        message.reply_text("This person CREATED the chat, how would I demote them?")
+        message.reply_text("Is this for real? Hey, this person CREATED the chat, how the eff would I demote them?")
         return ""
 
     if not user_member.status == 'administrator':
@@ -182,9 +182,9 @@ def invite(bot: Bot, update: Update):
             invitelink = bot.exportChatInviteLink(chat.id)
             update.effective_message.reply_text(invitelink)
         else:
-            update.effective_message.reply_text("I don't have access to the invite link, try changing my permissions!")
+            update.effective_message.reply_text("I can't grab the link! Check my permissions.")
     else:
-        update.effective_message.reply_text("I can only give you invite links for supergroups and channels, sorry!")
+        update.effective_message.reply_text("Dude, this AIN'T a supergroup or something")
 
 
 @run_async

@@ -25,7 +25,7 @@ You can find the list of available commands with /help.
 """
 
 SOURCE_STRING = """
-I'm built in python3, using the python-telegram-bot library, and am fully opensource - you can find what makes me tick [here](https://github.com/corsicanu/tgbot)
+I'm built in python3, using the python-telegram-bot library, and am fully opensource - you can find what makes me tick [here](https://https://github.com/kique119/tgbot)
 """
 
 HELP_STRINGS = """
@@ -46,7 +46,7 @@ Other available commands:
 """.format("" if not ALLOW_EXCL else "\nAll commands can either be used with / or !.\n")
 
 DONATE_STRING = """Nice that you wanna donate. \
-You can send a donation to my current maintainers via [PayPal](paypal.me/corsicanu) and [PayPal](paypal.me/nunopenim)."""
+But right now Tenno doesn't want donations."""
 
 IMPORTED = {}
 MIGRATEABLE = []

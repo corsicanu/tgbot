@@ -67,15 +67,15 @@ def gban(bot: Bot, update: Update, args: List[str]):
         return
 
     if int(user_id) in SUDO_USERS:
-        message.reply_text("Now kiss each other!")
+        message.reply_text("... Did you just try to gban a sudo user? You're as useless as Ryuji")
         return
 
     if int(user_id) in SUPPORT_USERS:
-        message.reply_text("OOOH someone's trying to gban a support user! *grabs popcorn*")
+        message.reply_text("Meh, I'm not gonna gban an effin support user.")
         return
 
     if user_id == bot.id:
-        message.reply_text("Lets gban myself why don't I? Good one.")
+        message.reply_text("...")
         return
 
     try:
@@ -85,12 +85,12 @@ def gban(bot: Bot, update: Update, args: List[str]):
         return
 
     if user_chat.type != 'private':
-        message.reply_text("That's not a user!")
+        message.reply_text("You know that's not an user, right?")
         return
 
     if sql.is_user_gbanned(user_id):
         if not reason:
-            message.reply_text("This user is already gbanned; I'd change the reason, but you haven't given me one...")
+            message.reply_text("I already gbanned this user. If you want to change the reason, at least give one.")
             return
 
         old_reason = sql.update_gban_reason(user_id, user_chat.username or user_chat.first_name, reason)
@@ -172,7 +172,7 @@ def gban(bot: Bot, update: Update, args: List[str]):
             pass
 
     send_to_list(bot, SUDO_USERS + SUPPORT_USERS, 
-                  "{} has been successfully gbanned!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account")),
+                  "{} is done for!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account")),
                 html=True)
     message.reply_text("Person has been gbanned.")
 
@@ -183,12 +183,12 @@ def ungban(bot: Bot, update: Update, args: List[str]):
 
     user_id = extract_user(message, args)
     if not user_id or int(user_id)==777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return
 
     user_chat = bot.get_chat(user_id)
     if user_chat.type != 'private':
-        message.reply_text("That's not a user!")
+        message.reply_text("You know that's not an user, right?")
         return
 
     if not sql.is_user_gbanned(user_id):
@@ -236,7 +236,7 @@ def ungban(bot: Bot, update: Update, args: List[str]):
     sql.ungban_user(user_id)
 
     send_to_list(bot, SUDO_USERS + SUPPORT_USERS, 
-                  "{} has been unbanned globally!".format(mention_html(user_chat.id, 
+                  "{} is back in the game!".format(mention_html(user_chat.id, 
                                                                          user_chat.first_name or "Deleted Account")),
                   html=True)
 
@@ -248,10 +248,10 @@ def gbanlist(bot: Bot, update: Update):
     banned_users = sql.get_gban_list()
 
     if not banned_users:
-        update.effective_message.reply_text("There aren't any gbanned users! You're kinder than I expected...")
+        update.effective_message.reply_text("the gban list is empty! You're either soft, or didn't find a reason to gban anyone. I vote for the soft one tho.")
         return
 
-    banfile = 'Screw these guys.\n'
+    banfile = 'These persons are effed up.\n'
     for user in banned_users:
         banfile += "[x] {} - {}\n".format(user["name"], user["user_id"])
         if user["reason"]:

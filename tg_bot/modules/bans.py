@@ -30,7 +30,7 @@ def ban(bot: Bot, update: Update, args: List[str]) -> str:
     user_id, reason = extract_user_and_text(message, args)
 
     if not user_id or int(user_id)==777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return ""
 
     try:
@@ -43,11 +43,11 @@ def ban(bot: Bot, update: Update, args: List[str]) -> str:
             raise
 
     if is_user_ban_protected(chat, user_id, member):
-        message.reply_text("Can't do that, user is admin..")
+        message.reply_text("Dude, that's an admin...")
         return ""
 
     if user_id == bot.id:
-        message.reply_text("hahahahahahaha nice try.. nope")
+        message.reply_text("That won't work, dude. Tho you can try again if you want.")
         return ""
 
     log = "<b>{}:</b>" \
@@ -95,7 +95,7 @@ def temp_ban(bot: Bot, update: Update, args: List[str]) -> str:
     user_id, reason = extract_user_and_text(message, args)
 
     if not user_id or int(user_id)==777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return ""
 
     try:
@@ -108,15 +108,15 @@ def temp_ban(bot: Bot, update: Update, args: List[str]) -> str:
             raise
 
     if is_user_ban_protected(chat, user_id, member):
-        message.reply_text("Can't do that, user is admin..")
+        message.reply_text("Dude, that's an admin...")
         return ""
 
     if user_id == bot.id:
-        message.reply_text("hahahahahahaha nice try.. nope")
+        message.reply_text("Dude, that won't work. Tho you can try again if you want.")
         return ""
 
     if not reason:
-        message.reply_text("You haven't specified a time to ban this user for!")
+        message.reply_text("Err... Hoe much time?")
         return ""
 
     split_reason = reason.split(None, 1)
@@ -147,19 +147,19 @@ def temp_ban(bot: Bot, update: Update, args: List[str]) -> str:
     try:
         chat.kick_member(user_id, until_date=bantime)
         bot.send_sticker(chat.id, BAN_STICKER)  # banhammer marie sticker
-        message.reply_text("Banned! User will be banned for {}.".format(time_val))
+        message.reply_text("Give him hell, Captain Kidd! User will be banned for {}.".format(time_val))
         return log
 
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text("Banned! User will be banned for {}.".format(time_val), quote=False)
+            message.reply_text("Give him hell, Captain Kidd! User will be banned for {}.".format(time_val), quote=False)
             return log
         else:
             LOGGER.warning(update)
             LOGGER.exception("ERROR banning user %s in chat %s (%s) due to %s", user_id, chat.title, chat.id,
                              excp.message)
-            message.reply_text("Well damn, I can't ban that user.")
+            message.reply_text("Well shit, I can't ban that user.")
 
     return ""
 
@@ -190,11 +190,11 @@ def kick(bot: Bot, update: Update, args: List[str]) -> str:
             raise
 
     if is_user_ban_protected(chat, user_id):
-        message.reply_text("I'm not gonna kick an admin... Though I reckon it'd be pretty funny.")
+        message.reply_text("Dude, that's an admin...")
         return ""
 
     if user_id == bot.id:
-        message.reply_text("hahahahahahaha nice try.. nope")
+        message.reply_text("Dude, that won't work. Tho you can try again if you want.")
         return ""
 
     res = chat.unban_member(user_id)  # unban on current user = kick
@@ -217,7 +217,7 @@ def kick(bot: Bot, update: Update, args: List[str]) -> str:
         return log
 
     else:
-        message.reply_text("Well damn, I can't kick that user.")
+        message.reply_text("Well shit, I can't kick that user.")
 
     return ""
 
@@ -266,7 +266,7 @@ def unban(bot: Bot, update: Update, args: List[str]) -> str:
     user_id, reason = extract_user_and_text(message, args)
 
     if not user_id or int(user_id)==777000:
-        message.reply_text("You don't seem to be referring to a user.")
+        message.reply_text("Who?")
         return ""
 
     try:
@@ -279,15 +279,15 @@ def unban(bot: Bot, update: Update, args: List[str]) -> str:
             raise
 
     if user_id == bot.id:
-        message.reply_text("How would I unban myself if I wasn't here...?")
+        message.reply_text("Dude... For real?")
         return ""
 
     if is_user_in_chat(chat, user_id):
-        message.reply_text("User is already in the chat...")
+        message.reply_text("Hey, he's here.")
         return ""
 
     chat.unban_member(user_id)
-    message.reply_text("Yep, this user can join!")
+    message.reply_text("And he's back in the game!")
 
     log = "<b>{}:</b>" \
           "\n#UNBANNED" \

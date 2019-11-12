@@ -36,11 +36,11 @@ def check_flood(bot: Bot, update: Update) -> str:
     soft_flood = sql.get_flood_strength(chat.id)
     if soft_flood:  # kick
         chat.unban_member(user.id)
-        reply = "Wonderful, I don't like your flooding. Get out! {} has been kicked!".format(mention_html(user.id, user.first_name))
+        reply = "Yeah.. No. That's a lot of messages. Get out".format(mention_html(user.id, user.first_name))
 
     else:  # ban
         chat.kick_member(user.id)
-        reply = "Frankly, I like to leave the flooding to natural disasters. {} has been banned!".format(mention_html(user.id, user.first_name))
+        reply = "Yeah... No. That's a lot of messages. Out of the way.".format(mention_html(user.id, user.first_name))
     try:
         keyboard = []
         msg.reply_text(reply, reply_markup=keyboard, parse_mode=ParseMode.HTML)
@@ -52,11 +52,11 @@ def check_flood(bot: Bot, update: Update) -> str:
                                              mention_html(user.id, user.first_name))
 
     except BadRequest:
-        msg.reply_text("I can't kick people here, give me permissions first! Until then, I'll disable anti-flood.")
+        msg.reply_text("Dude, I can't do an effin thing here! Make me admin or check my permissions godammit!.")
         sql.set_flood(chat.id, 0)
         return "<b>{}:</b>" \
                "\n#INFO" \
-               "\nDon't have kick permissions, so automatically disabled anti-flood.".format(chat.title)
+               "\nMake me admin or check my permissions godammit!".format(chat.title)
 
 
 @run_async
@@ -115,10 +115,10 @@ def flood(bot: Bot, update: Update):
     else:
         soft_flood = sql.get_flood_strength(chat.id)
         if soft_flood:
-            msg.reply_text("I'm currently kicking users out if they send more than {} " 
+            msg.reply_text("Right now I kick users' ass out if they send more than {} " 
                            "consecutive messages. They will able to join again!".format(limit, parse_mode=ParseMode.MARKDOWN))
         else:
-            msg.reply_text("I'm currently banning users if they send more than {} " 
+            msg.reply_text("Right now I ban users' ass if they send more than {} " 
                            "consecutive messages.".format(limit, parse_mode=ParseMode.MARKDOWN))
 
 @run_async
