@@ -14,13 +14,8 @@ RUN apk add --no-cache --update \
     bash \
     build-base \
     bzip2-dev \
-    curl \
     coreutils \
-    figlet \
-    gcc \
-    g++ \
     git \
-    aria2 \
     util-linux \
     libevent \
     libjpeg-turbo-dev \
@@ -38,15 +33,13 @@ RUN apk add --no-cache --update \
     postgresql \
     postgresql-client \
     postgresql-dev \
-    wget \
     python \
     python3 \
     python-dev \
     python3-dev \
     sqlite-dev \
     sudo \
-    zlib-dev \
-    zip
+    zlib-dev
 
 
 RUN python3 -m ensurepip \
