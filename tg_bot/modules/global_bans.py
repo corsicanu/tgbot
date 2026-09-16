@@ -28,7 +28,8 @@ GBAN_ERRORS = {
     "Only the creator of a basic group can kick group administrators",
     "Peer_id_invalid", "User is an administrator of the chat",
     "User_not_participant", "Reply message not found",
-    "Can't remove chat owner"
+    "Can't remove chat owner",
+    "Can't restrict members in the chat; users must be banned in the corresponding channel chat"
 }
 
 UNGBAN_ERRORS = {
@@ -41,7 +42,8 @@ UNGBAN_ERRORS = {
     "Not enough rights to restrict/unrestrict chat member", "Not in the chat",
     "Only the creator of a basic group can kick group administrators",
     "Peer_id_invalid", "User is an administrator of the chat",
-    "User_not_participant", "Reply message not found", "User not found"
+    "User_not_participant", "Reply message not found", "User not found",
+    "Can't restrict members in the chat; users must be banned in the corresponding channel chat"
 }
 
 
@@ -412,3 +414,4 @@ dispatcher.add_handler(GBAN_STATUS)
 
 if STRICT_GBAN:  # enforce GBANS if this is set
     dispatcher.add_handler(GBAN_ENFORCER, GBAN_ENFORCE_GROUP)
+
