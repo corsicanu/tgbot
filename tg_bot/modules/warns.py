@@ -56,7 +56,7 @@ def warn(user: User,
                 limit, mention_html(user.id, user.first_name))
 
         else:  # ban
-            chat.kick_member(user.id)
+            chat.ban_member(user.id)
             reply = "{} warnings, {} has been banned!".format(
                 limit, mention_html(user.id, user.first_name))
 
@@ -570,3 +570,4 @@ dispatcher.add_handler(LIST_WARN_HANDLER)
 dispatcher.add_handler(WARN_LIMIT_HANDLER)
 dispatcher.add_handler(WARN_STRENGTH_HANDLER)
 dispatcher.add_handler(WARN_FILTER_HANDLER, WARN_HANDLER_GROUP)
+

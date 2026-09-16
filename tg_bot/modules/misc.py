@@ -1,7 +1,7 @@
 import html
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import time
 import requests
@@ -549,7 +549,7 @@ def get_time(update: Update, context: CallbackContext):
             elif country:
                 location = country
 
-            timenow = int(datetime.utcnow().timestamp())
+            timenow = int(datetime.now(timezone.utc).timestamp())
             res = requests.get(GMAPS_TIME,
                                params=dict(location="{},{}".format(lat, long),
                                            timestamp=timenow))
@@ -741,3 +741,4 @@ dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
 dispatcher.add_handler(GDPR_HANDLER)
 dispatcher.add_handler(GPS_HANDLER)
+

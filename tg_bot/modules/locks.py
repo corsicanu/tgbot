@@ -301,7 +301,7 @@ def del_lockables(update: Update, context: CallbackContext):
                                 "but I'm not admin!")
                             return
 
-                        chat.kick_member(new_mem.id)
+                        chat.ban_member(new_mem.id)
                         message.reply_text(
                             "Only admins are allowed to add bots to this chat! Get outta here."
                         )
@@ -444,3 +444,4 @@ dispatcher.add_handler(
     MessageHandler(Filters.all & Filters.chat_type.groups,
                    rest_handler,
                    run_async=True), REST_GROUP)
+

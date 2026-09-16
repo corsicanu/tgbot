@@ -42,7 +42,7 @@ def check_flood(update: Update, context: CallbackContext) -> str:
             mention_html(user.id, user.first_name))
 
     else:  # ban
-        chat.kick_member(user.id)
+        chat.ban_member(user.id)
         reply = "Frankly, I like to leave the flooding to natural disasters. {} has been banned!".format(
             mention_html(user.id, user.first_name))
     try:

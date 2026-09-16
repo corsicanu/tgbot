@@ -122,7 +122,7 @@ def rban(update: Update, context: CallbackContext):
         return
 
     try:
-        chat.kick_member(user_id)
+        chat.ban_member(user_id)
         rbanning = "Hunting again in the wild!\n{} has been remotely banned from {}! \n".format(
             mention_html(member.user.id, member.user.first_name),
             (chat.title or chat.first or chat.username))
@@ -517,3 +517,4 @@ dispatcher.add_handler(RKICK_HANDLER)
 dispatcher.add_handler(RMUTE_HANDLER)
 dispatcher.add_handler(RUNMUTE_HANDLER)
 dispatcher.add_handler(RECHO_HANDLER)
+

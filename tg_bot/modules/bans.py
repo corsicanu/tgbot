@@ -62,7 +62,7 @@ def ban(update: Update, context: CallbackContext):
                                        ", user is ban protected.")
                     continue
                 try:
-                    chat.kick_member(integerID)
+                    chat.ban_member(integerID)
                     # bot.send_sticker(update.effective_chat.id, BAN_STICKER)  # ban sticker
                     reply = "{} has been banned!".format(
                         mention_html(member.user.id, member.user.first_name))
@@ -116,7 +116,7 @@ def ban(update: Update, context: CallbackContext):
         if reason:
             log += "\n<b>Reason:</b> {}".format(reason)
         try:
-            chat.kick_member(user_id)
+            chat.ban_member(user_id)
             bot.send_sticker(update.effective_chat.id,
                              BAN_STICKER)  # ban sticker
             reply = "{} has been banned!".format(
@@ -206,7 +206,7 @@ def temp_ban(update: Update, context: CallbackContext):
         log += "\n<b>Reason:</b> {}".format(reason)
 
     try:
-        chat.kick_member(user_id, until_date=bantime)
+        chat.ban_member(user_id, until_date=bantime)
         bot.send_sticker(chat.id, BAN_STICKER)  # ban sticker
         reply = "\nReason: <code>{}</code>".format(reason) if reason else ""
         message.reply_text("Banned! {} will be banned for {}.".format(
@@ -355,7 +355,7 @@ def banme(update: Update, context: CallbackContext):
         update.effective_message.reply_text("Sorry, can't do that")
         return
 
-    res = update.effective_chat.kick_member(user_id)
+    res = update.effective_chat.ban_member(user_id)
     if res:
         update.effective_message.reply_text("You shall be banned.")
     else:
@@ -492,3 +492,4 @@ dispatcher.add_handler(KICKME_HANDLER)
 dispatcher.add_handler(RIPME_HANDLER)
 dispatcher.add_handler(AFK_HANDLER)
 dispatcher.add_handler(BANME_HANDLER)
+

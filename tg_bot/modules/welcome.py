@@ -145,9 +145,9 @@ def new_member(update: Update, context: CallbackContext):
             send_to_list(bot, SUDO_USERS + SUPPORT_USERS, report, html=True)
         if defense:
             bantime = int(time.time()) + 60
-            chat.kick_member(new_mem.id, until_date=bantime)
+            chat.ban_member(new_mem.id, until_date=bantime)
     elif casPrefs and autoban and cas.banchecker(user.id):
-        chat.kick_member(user.id)
+        chat.ban_member(user.id)
         msg.reply_text(
             "CAS banned user detected! User has been automatically banned!")
         isUserGbanned = gbansql.is_user_gbanned(user.id)
@@ -157,7 +157,7 @@ def new_member(update: Update, context: CallbackContext):
             send_to_list(bot, SUDO_USERS + SUPPORT_USERS, report, html=True)
     elif defense and (user.id not in SUDO_USERS + SUPPORT_USERS):
         bantime = int(time.time()) + 60
-        chat.kick_member(user.id, until_date=bantime)
+        chat.ban_member(user.id, until_date=bantime)
     elif should_welc:
         sent = None
         new_members = update.effective_message.new_chat_members
@@ -267,7 +267,7 @@ def new_member(update: Update, context: CallbackContext):
                                 or member.status == 'left'):
                             print("kicking user..")
                             bantime = int(time.time()) + 60
-                            chat.kick_member(new_mem.id, until_date=bantime)
+                            chat.ban_member(new_mem.id, until_date=bantime)
                             buttonMsg.delete()
                             sent.delete()
                             update.message.delete()

@@ -556,11 +556,13 @@ def process_update(self, update):
                 'An uncaught error was raised while handling the error')
         return
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     updatedChat = update.effective_chat
     if hasattr(updatedChat, "id"):
         cnt = CHATS_CNT.get(updatedChat.id, 0)
-        t = CHATS_TIME.get(updatedChat.id, datetime.datetime(1970, 1, 1))
+        t = CHATS_TIME.get(
+            updatedChat.id,
+            datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc))
     else:  #investigating new nonetype error solutions
         return  #halting process if NoneType object is encountered
 
