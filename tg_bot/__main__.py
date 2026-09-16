@@ -158,34 +158,27 @@ def start(update: Update, context: CallbackContext):
         update.effective_message.reply_text("Yo, whadup?")
 
 
-# for test purposes
 def error_callback(update, context):
-    bot = context.bot
     error = context.error
     try:
         raise error
     except Unauthorized:
-        print("no nono1")
-        print(error)
-        # remove update.message.chat_id from conversation list
+        # bot was blocked/kicked - nothing to act on, chat is gone either way
+        LOGGER.debug("Unauthorized: %s", error)
     except BadRequest:
-        print("no nono2")
-        print("BadRequest caught")
-        print(error)
-
+        LOGGER.warning("BadRequest: %s", error)
         # handle malformed requests - read more below!
     except TimedOut:
-        print("no nono3")
+        LOGGER.debug("TimedOut: %s", error)
         # handle slow connection problems
     except NetworkError:
-        print("no nono4")
+        LOGGER.warning("NetworkError: %s", error)
         # handle other connection problems
     except ChatMigrated as err:
-        print("no nono5")
-        print(err)
+        LOGGER.info("ChatMigrated: %s", err)
         # the chat_id of a group has changed, use e.new_chat_id instead
     except TelegramError:
-        print(error)
+        LOGGER.exception("Unhandled TelegramError: %s", error)
         # handle all other telegram related errors
 
 
@@ -527,7 +520,7 @@ def main():
     dispatcher.add_handler(donate_handler)
     dispatcher.add_handler(rhelp_handler)
 
-    # dispatcher.add_error_handler(error_callback)
+    dispatcher.add_error_handler(error_callback)
 
     # add antiflood processor
     Dispatcher.process_update = process_update
@@ -619,3 +612,4 @@ def process_update(self, update):
 if __name__ == '__main__':
     LOGGER.info("Successfully loaded modules: " + str(ALL_MODULES))
     main()
+
