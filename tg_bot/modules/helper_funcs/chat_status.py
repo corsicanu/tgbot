@@ -2,12 +2,35 @@ from functools import wraps
 from typing import Optional
 
 from telegram import User, Chat, ChatMember, Update, Bot
+from telegram.error import BadRequest
 
 from tg_bot import CallbackContext, DEL_CMDS, SUDO_USERS, WHITELIST_USERS
 
+# Errors that just mean "I can't tell / I'm not in a position to check" -
+# never let these bubble up as unhandled exceptions from a per-message check.
+IGNORABLE_MEMBER_ERRORS = {
+    "Chat_admin_required", "Chat not found", "User not found",
+    "Peer_id_invalid", "Not enough rights to restrict/unrestrict chat member",
+    "Method is available for supergroup and channel chats only",
+    "Method is available only for supergroups", "User_not_participant",
+}
+
+
+def _safe_get_member(chat: Chat, user_id: int) -> Optional[ChatMember]:
+    """chat.get_member() that swallows the errors we can't do anything about
+    (e.g. bot isn't admin, chat is a channel we can't query) instead of
+    raising and taking down whatever handler called it."""
+    try:
+        return chat.get_member(user_id)
+    except BadRequest as excp:
+        if excp.message in IGNORABLE_MEMBER_ERRORS:
+            return None
+        raise
+
 
 def can_delete(chat: Chat, bot_id: int) -> bool:
-    return chat.get_member(bot_id).can_delete_messages
+    member = _safe_get_member(chat, bot_id)
+    return bool(member) and member.can_delete_messages
 
 
 def is_user_ban_protected(chat: Chat,
@@ -20,7 +43,9 @@ def is_user_ban_protected(chat: Chat,
         return True
 
     if not member:
-        member = chat.get_member(user_id)
+        member = _safe_get_member(chat, user_id)
+    if not member:
+        return False
     return member.status in ('administrator', 'creator')
 
 
@@ -31,7 +56,9 @@ def is_user_admin(chat: Chat, user_id: int, member: ChatMember = None) -> bool:
         return True
 
     if not member:
-        member = chat.get_member(user_id)
+        member = _safe_get_member(chat, user_id)
+    if not member:
+        return False
     return member.status in ('administrator', 'creator')
 
 
@@ -43,12 +70,16 @@ def is_bot_admin(chat: Chat,
         return True
 
     if not bot_member:
-        bot_member = chat.get_member(bot_id)
+        bot_member = _safe_get_member(chat, bot_id)
+    if not bot_member:
+        return False
     return bot_member.status in ('administrator', 'creator')
 
 
 def is_user_in_chat(chat: Chat, user_id: int) -> bool:
-    member = chat.get_member(user_id)
+    member = _safe_get_member(chat, user_id)
+    if not member:
+        return False
     return member.status not in ('left', 'kicked')
 
 
@@ -71,7 +102,8 @@ def can_pin(func):
     @wraps(func)
     def pin_rights(update: Update, context: CallbackContext, *args, **kwargs):
         bot = context.bot
-        if update.effective_chat.get_member(bot.id).can_pin_messages:
+        member = _safe_get_member(update.effective_chat, bot.id)
+        if member and member.can_pin_messages:
             return func(update, context, *args, **kwargs)
         else:
             update.effective_message.reply_text(
@@ -86,7 +118,8 @@ def can_promote(func):
     def promote_rights(update: Update, context: CallbackContext, *args,
                        **kwargs):
         bot = context.bot
-        if update.effective_chat.get_member(bot.id).can_promote_members:
+        member = _safe_get_member(update.effective_chat, bot.id)
+        if member and member.can_promote_members:
             return func(update, context, *args, **kwargs)
         else:
             update.effective_message.reply_text(
@@ -101,7 +134,8 @@ def can_restrict(func):
     def promote_rights(update: Update, context: CallbackContext, *args,
                        **kwargs):
         bot = context.bot
-        if update.effective_chat.get_member(bot.id).can_restrict_members:
+        member = _safe_get_member(update.effective_chat, bot.id)
+        if member and member.can_restrict_members:
             return func(update, context, *args, **kwargs)
         else:
             update.effective_message.reply_text(
@@ -167,3 +201,4 @@ def user_not_admin(func):
             return func(update, context, *args, **kwargs)
 
     return is_not_admin
+
