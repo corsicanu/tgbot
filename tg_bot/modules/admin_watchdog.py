@@ -128,8 +128,13 @@ LEFT_MEMBER_HANDLER = MessageHandler(Filters.status_update.left_chat_member,
                                      on_bot_removed,
                                      run_async=True)
 
-dispatcher.add_handler(NEW_MEMBER_HANDLER)
-dispatcher.add_handler(LEFT_MEMBER_HANDLER)
+# unused elsewhere (existing groups: 0 default/welcome, 1-4, 6, 9-11) -
+# own group so we only *observe* joins/leaves, never block group-0
+# handlers like welcome.py's greet/goodbye messages
+WATCHDOG_GROUP = 20
+
+dispatcher.add_handler(NEW_MEMBER_HANDLER, WATCHDOG_GROUP)
+dispatcher.add_handler(LEFT_MEMBER_HANDLER, WATCHDOG_GROUP)
 
 updater.job_queue.run_repeating(check_admin_status,
                                 interval=POLL_INTERVAL_SECONDS,
