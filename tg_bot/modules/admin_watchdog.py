@@ -32,6 +32,10 @@ POLL_FIRST_DELAY_SECONDS = 60
 # pause between leave_chat() calls so a big backlog doesn't trip
 # Telegram's flood control (which would then crash the whole run)
 LEAVE_THROTTLE_SECONDS = 0.3
+# light pause between get_chat_member() checks too - there can be
+# thousands of chats in the registry, and calling this back-to-back
+# for all of them risks flood control on the read side as well
+CHECK_THROTTLE_SECONDS = 0.05
 # keep a single digest message under Telegram's ~4096 char limit
 DIGEST_CHUNK_CHARS = 3500
 
@@ -122,6 +126,7 @@ def check_admin_status(context: CallbackContext):
         try:
             try:
                 member = bot.get_chat_member(int(chat_id), bot.id)
+                time.sleep(CHECK_THROTTLE_SECONDS)
             except BadRequest as excp:
                 if excp.message in NOT_IN_CHAT_ERRORS:
                     sql.remove_chat(chat_id)
@@ -131,6 +136,17 @@ def check_admin_status(context: CallbackContext):
                 continue
             except Unauthorized:
                 # bot was kicked/banned - nothing to leave, just stop tracking
+                sql.remove_chat(chat_id)
+                continue
+
+            if member.status in ('left', 'kicked'):
+                # we're not actually in this chat (any more) - Telegram
+                # returns our own status here instead of erroring, so this
+                # is how a past leave (or a kick) shows up. Nothing to do
+                # but stop tracking it - treating this as "not admin" was
+                # the bug: it kept starting a fresh grace timer for a chat
+                # we'd already left, "leaving" it again a day later, and
+                # repeating forever.
                 sql.remove_chat(chat_id)
                 continue
 
