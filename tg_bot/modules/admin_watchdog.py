@@ -48,6 +48,24 @@ NOT_IN_CHAT_ERRORS = {
 }
 
 
+def _in_chat(member):
+    """Whether a get_chat_member() result means we're actually in the chat.
+    A restricted bot can be 'restricted' with is_member=False, which means
+    it's not in the chat at all - same as 'left'."""
+    if member.status in ('left', 'kicked'):
+        return False
+    if member.status == 'restricted' and not getattr(member, 'is_member', True):
+        return False
+    return True
+
+
+def _still_in_chat(bot, chat_id):
+    try:
+        return _in_chat(bot.get_chat_member(int(chat_id), bot.id))
+    except TelegramError:
+        return False
+
+
 def _leave(bot, chat_id, chat_name, reason):
     """Leave a chat. Returns True only once we're sure it's handled - if
     leave_chat itself fails with something like flood control, we
@@ -57,8 +75,15 @@ def _leave(bot, chat_id, chat_name, reason):
     notifications long after the bot had actually already left them)."""
     try:
         bot.leave_chat(int(chat_id))
-    except (BadRequest, Unauthorized):
-        pass  # already not in the chat one way or another - fine
+    except (BadRequest, Unauthorized) as excp:
+        # usually means we're already gone - but verify. Counting a failed
+        # leave as success dropped the record while we were still in the
+        # chat, so the next poll restarted the grace timer and the same
+        # chat got "left" (and notified) again every ~25h, forever.
+        if _still_in_chat(bot, chat_id):
+            LOGGER.warning("admin_watchdog: leave_chat failed for %s (%s), "
+                           "still in chat: %s", chat_id, chat_name, excp)
+            return False
     except TelegramError as excp:
         LOGGER.warning("admin_watchdog: leave_chat failed for %s: %s",
                        chat_id, excp)
@@ -139,7 +164,7 @@ def check_admin_status(context: CallbackContext):
                 sql.remove_chat(chat_id)
                 continue
 
-            if member.status in ('left', 'kicked'):
+            if not _in_chat(member):
                 # we're not actually in this chat (any more) - Telegram
                 # returns our own status here instead of erroring, so this
                 # is how a past leave (or a kick) shows up. Nothing to do
