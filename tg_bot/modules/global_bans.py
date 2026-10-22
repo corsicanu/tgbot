@@ -1,9 +1,10 @@
 import html
+import time
 from io import BytesIO
 from typing import Optional, List
 
 from telegram import Message, Update, Bot, User, Chat, ParseMode, InlineKeyboardMarkup
-from telegram.error import BadRequest, TelegramError
+from telegram.error import BadRequest, RetryAfter, TelegramError
 from telegram.ext import run_async, CommandHandler, MessageHandler, Filters
 from telegram.utils.helpers import mention_html
 
@@ -185,6 +186,129 @@ def gban(update: Update, context: CallbackContext):
                                   or "Deleted Account")),
                  html=True)
     message.reply_text("Person has been gbanned.")
+
+
+GBAN_ARRAY_MAX = 50
+
+
+def _ban_with_retry(bot, chat_id, user_id):
+    try:
+        bot.ban_chat_member(chat_id, user_id)
+    except RetryAfter as excp:
+        # flood control - a batch is up to MAX x every chat, so wait it out
+        # once instead of silently skipping this chat
+        time.sleep(excp.retry_after + 1)
+        bot.ban_chat_member(chat_id, user_id)
+
+
+def gbanarray(update: Update, context: CallbackContext):
+    """/gbanarray id1 id2 ... idN [reason] - gban several ids in one go.
+    Leading numeric args are ids, everything after the first non-number is
+    the reason. Unlike /gban, ids the bot has never seen are still gbanned
+    (spam accounts usually haven't talked to the bot), so they get banned
+    as soon as they show up in a chat."""
+    bot, args = context.bot, context.args
+    message = update.effective_message  # type: Optional[Message]
+    banner = update.effective_user  # type: Optional[User]
+
+    ids = []
+    for i, arg in enumerate(args):
+        if not arg.lstrip('-').isdigit():
+            break
+        if int(arg) not in ids:
+            ids.append(int(arg))
+    else:
+        i = len(args)
+    reason = " ".join(args[i:]) or None
+
+    if not ids:
+        message.reply_text("Usage: /gbanarray id1 id2 ... idN reason")
+        return
+    if len(ids) > GBAN_ARRAY_MAX:
+        message.reply_text("Max {} ids at once, you gave {}.".format(
+            GBAN_ARRAY_MAX, len(ids)))
+        return
+
+    to_ban = []  # (user_id, name)
+    skipped = []  # (user_id, why)
+    for user_id in ids:
+        if user_id in (777000, 1087968824, bot.id) or user_id <= 0:
+            skipped.append((user_id, "not a user"))
+            continue
+        if user_id in SUDO_USERS or user_id in SUPPORT_USERS:
+            skipped.append((user_id, "sudo/support user"))
+            continue
+
+        name = str(user_id)
+        try:
+            user_chat = bot.get_chat(user_id)
+            if user_chat.type != 'private':
+                skipped.append((user_id, "not a user"))
+                continue
+            name = user_chat.username or user_chat.first_name or name
+        except TelegramError:
+            pass  # bot never saw this user - gban by id anyway
+
+        if sql.is_user_gbanned(user_id):
+            if reason:
+                sql.update_gban_reason(user_id, name, reason)
+                skipped.append((user_id, "already gbanned, reason updated"))
+            else:
+                skipped.append((user_id, "already gbanned"))
+            continue
+
+        to_ban.append((user_id, name))
+
+    if not to_ban:
+        message.reply_text("Nothing to gban:\n" + "\n".join(
+            "{} - {}".format(uid, why) for uid, why in skipped))
+        return
+
+    message.reply_text("Gbanning {} user(s) across all chats, this can take "
+                       "a few minutes...".format(len(to_ban)))
+
+    for user_id, name in to_ban:
+        sql.gban_user(user_id, name, reason)
+
+    send_to_list(bot, SUDO_USERS + SUPPORT_USERS,
+                 "<b>Global Ban (batch)</b>" \
+                 "\n#GBAN" \
+                 "\n<b>Status:</b> <code>Enforcing</code>" \
+                 "\n<b>Sudo Admin:</b> {}" \
+                 "\n<b>Users:</b> {}" \
+                 "\n<b>Reason:</b> {}".format(
+                     mention_html(banner.id, banner.first_name),
+                     ", ".join("<code>{}</code>".format(uid) for uid, _ in to_ban),
+                     html.escape(reason or "No reason given")),
+                 html=True)
+
+    # one pass over the chats, banning every id per chat - not one full
+    # pass per id. Unlike /gban, an unexpected error doesn't abort/undo the
+    # whole batch, it's just counted and reported at the end.
+    errors = {}
+    for chat in get_all_chats():
+        chat_id = chat.chat_id
+        if not sql.does_chat_gban(chat_id):
+            continue
+        for user_id, _ in to_ban:
+            try:
+                _ban_with_retry(bot, chat_id, user_id)
+            except BadRequest as excp:
+                if excp.message in GBAN_ERRORS:
+                    continue
+                errors[excp.message] = errors.get(excp.message, 0) + 1
+            except TelegramError:
+                pass
+
+    text = "Gbanned {} user(s).".format(len(to_ban))
+    if skipped:
+        text += "\n\nSkipped:\n" + "\n".join(
+            "{} - {}".format(uid, why) for uid, why in skipped)
+    if errors:
+        text += "\n\nUnexpected errors (ban not applied in those chats):\n" + \
+            "\n".join("{} x{}".format(err, n) for err, n in errors.items())
+    send_to_list(bot, SUDO_USERS + SUPPORT_USERS, html.escape(text), html=True)
+    message.reply_text(text)
 
 
 def ungban(update: Update, context: CallbackContext):
@@ -388,6 +512,11 @@ GBAN_HANDLER = CommandHandler("gban",
                               run_async=True,
                               filters=CustomFilters.sudo_filter
                               | CustomFilters.support_filter)
+GBAN_ARRAY_HANDLER = CommandHandler("gbanarray",
+                                    gbanarray,
+                                    run_async=True,
+                                    filters=CustomFilters.sudo_filter
+                                    | CustomFilters.support_filter)
 UNGBAN_HANDLER = CommandHandler("ungban",
                                 ungban,
                                 run_async=True,
@@ -408,6 +537,7 @@ GBAN_ENFORCER = MessageHandler(Filters.all & Filters.chat_type.groups,
                                run_async=True)
 
 dispatcher.add_handler(GBAN_HANDLER)
+dispatcher.add_handler(GBAN_ARRAY_HANDLER)
 dispatcher.add_handler(UNGBAN_HANDLER)
 dispatcher.add_handler(GBAN_LIST)
 dispatcher.add_handler(GBAN_STATUS)
